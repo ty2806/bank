@@ -51,6 +51,7 @@ public class AccountServiceImpl implements AccountService {
     private AccountDto mapToDto(Account account) {
         AccountDto accountDto = new AccountDto();
         accountDto.setId(account.getId());
+        accountDto.setAccountNumber(account.getAccountNumber());
         accountDto.setUserName(account.getUserName());
         accountDto.setAddress(account.getAddress());
         accountDto.setBalance(account.getBalance());
@@ -59,6 +60,7 @@ public class AccountServiceImpl implements AccountService {
 
     private Account mapToEntity(AccountDto accountDto) {
         Account account = new Account();
+        account.setAccountNumber(accountDto.getAccountNumber());
         account.setUserName(accountDto.getUserName());
         account.setAddress(accountDto.getAddress());
         account.setBalance(accountDto.getBalance());
