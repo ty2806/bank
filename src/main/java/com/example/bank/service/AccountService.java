@@ -5,9 +5,9 @@ import com.example.bank.payload.AccountDto;
 import java.util.List;
 
 public interface AccountService {
-    public AccountDto createAccount(AccountDto accountDto);
+    public AccountDto createAccount(Long userId, AccountDto accountDto);
 
-    public List<AccountDto> getAllAccounts();
+    public List<AccountDto> getAccountsByUserId(Long userId);
 
     public AccountDto getAccountById(Long id);
 

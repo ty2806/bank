@@ -4,13 +4,16 @@ import com.example.bank.dao.AccountRepository;
 import com.example.bank.dao.TransactionRepository;
 import com.example.bank.entity.Account;
 import com.example.bank.entity.Transaction;
-import com.example.bank.exception.BlogAPIException;
+import com.example.bank.exception.BankAPIException;
+import com.example.bank.exception.QueryFormatInvalidException;
 import com.example.bank.exception.ResourceNotFoundException;
 import com.example.bank.payload.TransactionDto;
 import com.example.bank.service.TransactionService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,45 +28,58 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private ModelMapper modelMapper;
+
     @Override
+    @Transactional
     public TransactionDto createTransaction(Long accountId, TransactionDto transactionDto) {
-        Transaction transaction = mapToEntity(transactionDto);
+        Transaction transaction = modelMapper.map(transactionDto, Transaction.class);
         Account account = accountRepository.findById(accountId).orElseThrow(()->new ResourceNotFoundException("accounts", "id", accountId));
 
         transaction.setAccount(account);
         account.setBalance(account.getBalance()+transaction.getAmount());
         accountRepository.save(account);
-        return mapToDto(transactionRepository.save(transaction));
+        return modelMapper.map(transactionRepository.save(transaction), TransactionDto.class);
     }
 
     @Override
     public List<TransactionDto> getTransactionsByAccountId(Long accountId) {
+        if (!accountRepository.existsById(accountId)) throw new ResourceNotFoundException("accounts", "id", accountId);
         return transactionRepository
                 .findByAccountId(accountId)
                 .stream()
-                .map(this::mapToDto)
+                .map(a->modelMapper.map(a, TransactionDto.class))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TransactionDto> getTransactionsByAccountIdBetweenDate(Long accountId, LocalDate startDate, LocalDate endDate) {
+        if (!accountRepository.existsById(accountId)) throw new ResourceNotFoundException("accounts", "id", accountId);
+        if (startDate.isAfter(endDate)) throw new QueryFormatInvalidException("query start date is after end date");
         return transactionRepository
                 .findByAccountIdAndDateBetween(accountId, startDate, endDate).stream()
-                .map(this::mapToDto)
+                .map(a->modelMapper.map(a, TransactionDto.class))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public TransactionDto getTransactionById(Long accountId, Long id) {
-        return mapToDto(getTransaction(accountId, id));
+    public TransactionDto getTransactionById(Long id) {
+        return modelMapper.map(transactionRepository
+                .findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("transactions", "id", id)),
+                TransactionDto.class);
     }
 
     @Override
-    public TransactionDto updateTransaction(Long accountId, Long id, TransactionDto transactionDto) {
-        Transaction transaction = getTransaction(accountId, id);
+    @Transactional
+    public TransactionDto updateTransaction(Long id, TransactionDto transactionDto) {
+        Transaction transaction = transactionRepository
+                .findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("transactions", "id", id));
 
         Long diff = transactionDto.getAmount() - transaction.getAmount();
-        Account account = accountRepository.findById(accountId).orElseThrow(()->new ResourceNotFoundException("accounts", "id", accountId));
+        Account account = transaction.getAccount();
         account.setBalance(account.getBalance()+diff);
         accountRepository.save(account);
 
@@ -71,48 +87,20 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setDescription(transactionDto.getDescription());
         transaction.setReference(transactionDto.getReference());
         transaction.setAmount(transactionDto.getAmount());
-        return mapToDto(transactionRepository.save(transaction));
+        return modelMapper.map(transactionRepository.save(transaction), TransactionDto.class);
     }
 
     @Override
-    public void deleteTransaction(Long accountId, Long id) {
-        Transaction transaction = getTransaction(accountId, id);
-
-        Account account = accountRepository.findById(accountId).orElseThrow(()->new ResourceNotFoundException("accounts", "id", accountId));
-        account.setBalance(account.getBalance()-transaction.getAmount());
-        accountRepository.save(account);
-
-        transactionRepository.delete(transaction);
-    }
-
-    private TransactionDto mapToDto(Transaction transaction) {
-        TransactionDto transactionDto = new TransactionDto();
-        transactionDto.setId(transaction.getId());
-        transactionDto.setDate(transaction.getDate());
-        transactionDto.setDescription(transaction.getDescription());
-        transactionDto.setReference(transaction.getReference());
-        transactionDto.setAmount(transaction.getAmount());
-        return transactionDto;
-    }
-
-    private Transaction mapToEntity(TransactionDto transactionDto) {
-        Transaction transaction = new Transaction();
-        transaction.setDate(transactionDto.getDate());
-        transaction.setDescription(transactionDto.getDescription());
-        transaction.setReference(transactionDto.getReference());
-        transaction.setAmount(transactionDto.getAmount());
-        return transaction;
-    }
-
-    private Transaction getTransaction(Long accountId, Long id) {
-        Account account = accountRepository
-                .findById(accountId)
-                .orElseThrow(()->new ResourceNotFoundException("accounts", "id", accountId));
+    @Transactional
+    public void deleteTransaction(Long id) {
         Transaction transaction = transactionRepository
                 .findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("transactions", "id", id));
 
-        if (!transaction.getAccount().getId().equals(account.getId())) throw new BlogAPIException(HttpStatus.BAD_REQUEST, "The transaction does not belong to the account");
-        return transaction;
+        Account account = transaction.getAccount();
+        account.setBalance(account.getBalance()-transaction.getAmount());
+        accountRepository.save(account);
+
+        transactionRepository.delete(transaction);
     }
 }

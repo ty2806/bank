@@ -12,9 +12,9 @@ public interface TransactionService {
 
     public List<TransactionDto> getTransactionsByAccountIdBetweenDate(Long accountId, LocalDate startDate, LocalDate endDate);
 
-    public TransactionDto getTransactionById(Long accountId, Long id);
+    public TransactionDto getTransactionById(Long id);
 
-    public TransactionDto updateTransaction(Long accountId, Long id, TransactionDto transactionDto);
+    public TransactionDto updateTransaction(Long id, TransactionDto transactionDto);
 
-    public void deleteTransaction(Long accountId, Long id);
+    public void deleteTransaction(Long id);
 }
