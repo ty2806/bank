@@ -1,0 +1,28 @@
+
+
+input TransactionInput {
+    date: Date!
+    description: String
+    reference: Int!
+    amount: Long!
+}
+
+type Transaction {
+    id: ID!
+    date: Date!
+    description: String
+    reference: Int!
+    amount: Long!
+}
+
+extend type Query {
+    transactionsByAccountId(accountId: ID!): [Transaction]
+    transactionsByAccountIdBetweenDate(accountId: ID!, startDate: Date!, endDate: Date!): [Transaction]
+    transactionById(id: ID!): Transaction
+}
+
+extend type Mutation {
+    createTransaction(accountId: ID!, transaction: TransactionInput!): Transaction
+    updateTransaction(id: ID!, transaction: TransactionInput!): Transaction
+    deleteTransaction(id: ID!): String
+}

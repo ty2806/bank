@@ -1,0 +1,12 @@
+scalar Date
+@specifiedBy(url:
+"https://tools.ietf.org/html/rfc3339"
+)
+
+scalar Long
+
+directive @specifiedBy(url: String!) on SCALAR
+
+type Query {}
+
+type Mutation {}

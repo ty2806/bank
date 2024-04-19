@@ -1,0 +1,21 @@
+input AccountInput {
+    accountNumber: Int!
+    balance: Long!
+}
+
+type Account {
+    id: ID!
+    accountNumber: Int!
+    balance: Long!
+}
+
+extend type Query {
+    accountsByUserId(userId: ID!): [Account]
+    accountById(id: ID!): Account
+}
+
+extend type Mutation {
+    createAccount(userId: ID!, account: AccountInput!): Account
+    updateAccount(id: ID!, account: AccountInput!): Account
+    deleteAccount(id: ID!): String
+}
