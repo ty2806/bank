@@ -8,6 +8,7 @@ import com.example.bank.service.TransactionService;
 import com.example.bank.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
+@Slf4j
 public class AccountController {
 
     @Autowired
@@ -79,7 +81,7 @@ public class AccountController {
             // Create a new blank page and add it to the document
             PDPage page = new PDPage();
             document.addPage(page);
-
+            log.info("created a pdf file for statement response");
             // Create a new content stream which will "draw" the content to the page
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 // Begin the Content stream

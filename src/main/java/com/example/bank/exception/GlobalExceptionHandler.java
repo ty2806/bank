@@ -1,6 +1,7 @@
 package com.example.bank.exception;
 
 import com.example.bank.payload.ErrorDetails;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +11,7 @@ import org.springframework.web.context.request.WebRequest;
 import java.util.Date;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BankAPIException.class)
@@ -23,6 +25,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorDetails> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        log.error("a resource not found error is triggered.");
         ErrorDetails errorDetails = new ErrorDetails(HttpStatus.NOT_FOUND,
                                                     new Date(),
                                                     ex.getMessage(),
