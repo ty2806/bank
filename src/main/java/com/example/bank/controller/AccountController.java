@@ -6,6 +6,7 @@ import com.example.bank.payload.UserDto;
 import com.example.bank.service.AccountService;
 import com.example.bank.service.TransactionService;
 import com.example.bank.service.UserService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +41,17 @@ public class AccountController {
     private UserService userService;
 
     @PostMapping("/users/{userId}/accounts")
-    public ResponseEntity<AccountDto> createAccount(@PathVariable(name = "userId") Long userId, @Valid @RequestBody AccountDto accountDto) {
-        return new ResponseEntity<>(accountService.createAccount(userId, accountDto), HttpStatus.CREATED);
+    public ResponseEntity<AccountDto> createAccount(@PathVariable(name = "userId") Long userId,
+                                                    @Valid @RequestBody AccountDto accountDto,
+                                                    HttpServletResponse response) {
+        AccountDto createdAccount = accountService.createAccount(userId, accountDto);
+        Cookie cookie = new Cookie("accountCreated", "true");
+        cookie.setMaxAge(24 * 60 * 60); // 24 hours
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        return new ResponseEntity<>(createdAccount, HttpStatus.CREATED);
     }
 
     @GetMapping("/users/{userId}/accounts")
@@ -50,7 +60,14 @@ public class AccountController {
     }
 
     @GetMapping("/accounts/{id}")
-    public ResponseEntity<AccountDto> getAccountById(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<AccountDto> getAccountById(@PathVariable(name = "id") Long id,
+                                                     @CookieValue(name = "accountCreated", defaultValue = "false") String accountCreated) {
+        if ("true".equals(accountCreated)) {
+            System.out.println("Account creation was confirmed via cookie.");
+        } else {
+            System.out.println("No recent account creation cookie found.");
+        }
+
         return ResponseEntity.ok(accountService.getAccountById(id));
     }
 
